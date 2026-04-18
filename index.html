@@ -1008,8 +1008,9 @@ Geef ook 3-5 korte tags (losse woorden, geen hashtags) die het moment omschrijve
         messages: [{ role: 'user', content: prompt }]
       })
     });
-    if (!r.ok) throw new Error('Anthropic fout: ' + r.status);
-    const d = await r.json();
+    const responseText = await r.text();
+    if (!r.ok) throw new Error('Anthropic fout: ' + r.status + ' — ' + responseText);
+    const d = JSON.parse(responseText);
     const raw = d.content[0].text;
     const tagMatch = raw.match(/TAGS:\s*(.+)$/m);
     const tags = tagMatch ? tagMatch[1].split(',').map(t => t.trim()) : [];
