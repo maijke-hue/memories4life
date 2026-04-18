@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Memories4life</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #0f0f1a;
+    --bg2: #1a1a2e;
+    --bg3: #16213e;
+    --accent: #e8855a;
+    --accent2: #f0a882;
+    --text: #f0ede8;
+    --text2: #a09890;
+    --text3: #605850;
+    --border: rgba(240,237,232,0.08);
+    --border2: rgba(240,237,232,0.14);
+    --card: rgba(255,255,255,0.04);
+    --card2: rgba(255,255,255,0.07);
+    --success: #5cb88a;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  #app {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* SCREENS */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(24px);
+    transition: opacity 0.28s ease, transform 0.28s ease;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+  .screen.slide-back {
+    transform: translateX(-24px);
+  }
+
+  /* HEADER */
+  .header {
+    padding: 52px 24px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .header-logo {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .header-logo span { color: var(--accent); }
+  .header-sub {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  /* SCROLLABLE CONTENT */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* BOTTOM SAFE AREA */
+  .footer {
+    padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+    flex-shrink: 0;
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 15px 20px;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.12s, opacity 0.12s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-ghost {
+    background: var(--card);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    margin-top: 10px;
+  }
+  .btn:disabled { opacity: 0.4; }
+
+  /* RECORD BUTTON */
+  .record-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 0 32px;
+  }
+  .record-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+  .record-ring svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+  .record-ring svg circle {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-dasharray: 345;
+    stroke-dashoffset: 345;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear;
+  }
+  .record-btn {
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.12s;
+  }
+  .record-btn:active { transform: scale(0.94); }
+  .record-btn.recording { background: rgba(232,133,90,0.15); border-color: var(--accent); }
+  .record-icon { width: 36px; height: 36px; }
+  .record-timer {
+    font-family: 'Fraunces', serif;
+    font-size: 42px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: -1px;
+  }
+  .record-status { font-size: 13px; color: var(--text2); }
+
+  /* WAVEFORM */
+  .waveform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 40px;
+  }
+  .wb {
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent);
+    opacity: 0.3;
+    height: 6px;
+    transition: height 0.15s;
+  }
+  .waveform.active .wb { animation: waveanim 0.9s ease-in-out infinite; opacity: 0.8; }
+  @keyframes waveanim {
+    0%,100% { height: 4px; }
+    50% { height: 28px; }
+  }
+  .wb:nth-child(1) { animation-delay: 0s; }
+  .wb:nth-child(2) { animation-delay: 0.08s; }
+  .wb:nth-child(3) { animation-delay: 0.16s; }
+  .wb:nth-child(4) { animation-delay: 0.1s; }
+  .wb:nth-child(5) { animation-delay: 0.22s; }
+  .wb:nth-child(6) { animation-delay: 0.06s; }
+  .wb:nth-child(7) { animation-delay: 0.18s; }
+  .wb:nth-child(8) { animation-delay: 0.12s; }
+  .wb:nth-child(9) { animation-delay: 0.28s; }
+  .wb:nth-child(10) { animation-delay: 0.04s; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  /* STEPS */
+  .step-list { display: flex; flex-direction: column; gap: 0; }
+  .step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-row:last-child { border-bottom: none; }
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-dot.done { background: rgba(92,184,138,0.15); color: var(--success); }
+  .step-dot.active { background: rgba(232,133,90,0.15); color: var(--accent); }
+  .step-dot.waiting { background: var(--card); color: var(--text3); border: 1px solid var(--border); }
+  .step-name { font-size: 14px; color: var(--text); font-weight: 500; }
+  .step-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* PHOTO GRID */
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .photo-cell {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    background: var(--card2);
+    border: 2px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .photo-cell.selected { border-color: var(--accent); }
+  .photo-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-check {
+    position: absolute;
+    top: 5px; right: 5px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: none;
+    align-items: center; justify-content: center;
+  }
+  .photo-cell.selected .photo-check { display: flex; }
+  .photo-check svg { width: 10px; height: 10px; stroke: white; fill: none; stroke-width: 2.5; }
+  .photo-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+  }
+
+  /* SUMMARY TEXT */
+  .summary-box {
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.75;
+    color: var(--text);
+    margin-bottom: 14px;
+    min-height: 120px;
+    outline: none;
+  }
+  .summary-box[contenteditable="true"]:focus {
+    border-left-color: var(--accent2);
+    background: var(--card2);
+  }
+
+  /* LOCATION CHIP */
+  .loc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px 5px 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 14px;
+  }
+  .loc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  /* TAG PILLS */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    background: rgba(232,133,90,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(232,133,90,0.2);
+  }
+
+  /* SUCCESS SCREEN */
+  .success-circle {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(92,184,138,0.12);
+    border: 1px solid rgba(92,184,138,0.3);
+    display: flex; align-items: center; justify-content: center;
+    margin: 32px auto 20px;
+  }
+  .success-circle svg { width: 32px; height: 32px; stroke: var(--success); fill: none; stroke-width: 2; }
+
+  /* SETTINGS */
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-size: 14px; color: var(--text); }
+  .settings-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .settings-input {
+    background: var(--card2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    width: 100%;
+    margin-top: 8px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .settings-input:focus { border-color: var(--accent); }
+  .settings-input::placeholder { color: var(--text3); }
+
+  /* NAV */
+  .nav {
+    display: flex;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 4px;
+    gap: 3px;
+    cursor: pointer;
+    color: var(--text3);
+    transition: color 0.15s;
+    font-size: 10px;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+  /* PROCESSING SPINNER */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TRANSCRIPT */
+  .transcript-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-size: 13px;
+    color: var(--text2);
+    font-style: italic;
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+
+  /* HISTORY LIST */
+  .history-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .history-day {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-sm);
+    background: rgba(232,133,90,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .history-title { font-size: 14px; color: var(--text); font-weight: 500; }
+  .history-preview { font-size: 12px; color: var(--text2); margin-top: 2px; line-height: 1.4; }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text3);
+  }
+  .empty svg { width: 40px; height: 40px; stroke: var(--text3); fill: none; margin-bottom: 12px; opacity: 0.5; }
+  .empty p { font-size: 14px; }
+
+  /* COPY FLASH */
+  .copy-flash {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--success);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .copy-flash.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* SETUP BANNER */
+  .setup-banner {
+    margin: 0 20px 12px;
+    padding: 12px 14px;
+    background: rgba(232,133,90,0.1);
+    border: 1px solid rgba(232,133,90,0.25);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--accent2);
+    cursor: pointer;
+  }
+  .setup-banner strong { display: block; margin-bottom: 2px; font-weight: 500; }
+
+  /* MISC */
+  .divider { height: 1px; background: var(--border); margin: 8px 0 16px; }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .section-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+
+  .inline-flex { display: flex; align-items: center; gap: 8px; }
+  .ml-auto { margin-left: auto; }
+
+  .char-count { font-size: 11px; color: var(--text3); text-align: right; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SCREEN: RECORD -->
+  <div class="screen active" id="screen-record">
+    <div class="header">
+      <div>
+        <div class="header-logo">Memories<span>4life</span></div>
+        <div class="header-sub" id="trip-day-label">klaar om op te nemen</div>
+      </div>
+      <div style="cursor:pointer;color:var(--text2);" onclick="goTo('settings')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </div>
+    </div>
+
+    <div id="setup-warn" class="setup-banner" onclick="goTo('settings')" style="display:none;">
+      <strong>⚠ API-sleutels ontbreken</strong>
+      Tik hier om je OpenAI en Anthropic sleutels in te stellen
+    </div>
+
+    <div class="scroll-area">
+      <div class="record-wrap">
+        <div class="record-ring">
+          <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="55" id="progress-ring"/></svg>
+          <div class="record-btn" id="record-btn" onclick="toggleRecord()">
+            <svg class="record-icon" viewBox="0 0 40 40" fill="none" stroke="var(--accent)" stroke-width="1.8">
+              <rect id="rec-icon-rect" x="14" y="8" width="12" height="18" rx="6"/>
+              <path id="rec-icon-path" d="M8 20a12 12 0 0 0 24 0M20 32v4M14 36h12"/>
+            </svg>
+          </div>
+        </div>
+        <div class="record-timer" id="rec-timer">0:00</div>
+        <div class="waveform" id="waveform">
+          <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+          <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+          <div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div>
+        </div>
+        <div class="record-status" id="rec-status">Tik om te beginnen met opnemen</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Locatie</div>
+        <div class="inline-flex">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <span id="location-display" style="font-size:13px;color:var(--text2);">ophalen...</span>
+        </div>
+      </div>
+
+      <div id="prev-recordings" style="display:none;">
+        <div class="card-label" style="padding: 0 0 8px;">Eerdere opnames vandaag</div>
+        <div id="prev-list"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button class="btn btn-accent" id="process-btn" style="display:none;" onclick="goToProcessing()">
+        Verwerk opname →
+      </button>
+      <button class="btn btn-ghost" onclick="goTo('history')">Bekijk alle dagen</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: PROCESSING -->
+  <div class="screen" id="screen-processing">
+    <div class="header">
+      <div>
+        <div class="header-logo">Memories<span>4life</span></div>
+        <div class="header-sub">bezig met verwerken...</div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="section-title" style="margin-bottom:20px;">Jouw verhaal<br>wordt geschreven</div>
+
+      <div class="step-list" id="step-list">
+        <div class="step-row">
+          <div class="step-dot waiting" id="step1-dot">1</div>
+          <div>
+            <div class="step-name">Spraak omzetten naar tekst</div>
+            <div class="step-sub" id="step1-sub">Whisper AI · Nederlands</div>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-dot waiting" id="step2-dot">2</div>
+          <div>
+            <div class="step-name">Reisverhaal schrijven</div>
+            <div class="step-sub" id="step2-sub">Claude AI · jouw stijl</div>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-dot waiting" id="step3-dot">3</div>
+          <div>
+            <div class="step-name">Klaar voor Polarsteps</div>
+            <div class="step-sub" id="step3-sub">foto's kiezen & plakken</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="transcript-section" style="display:none;margin-top:16px;">
+        <div class="card-label">Transcriptie</div>
+        <div class="transcript-box" id="transcript-display"></div>
+      </div>
+
+      <div id="process-error" style="display:none;" class="card" style="border-color:rgba(200,80,80,0.3);">
+        <div style="color:#e07070;font-size:13px;" id="error-msg"></div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn btn-ghost" onclick="goTo('record')">Annuleren</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: PHOTOS -->
+  <div class="screen" id="screen-photos">
+    <div class="header">
+      <div>
+        <div class="header-logo">Memories<span>4life</span></div>
+        <div class="header-sub">kies 2–4 foto's</div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);" id="photo-count-header">0 / 4</div>
+    </div>
+    <div class="scroll-area">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">
+        Kies foto's die bij dit moment passen. Tik om te selecteren.
+      </div>
+      <div class="photo-grid" id="photo-grid">
+        <div style="display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:var(--radius-sm);border:1.5px dashed var(--border2);cursor:pointer;color:var(--text3);font-size:12px;flex-direction:column;gap:4px;" onclick="importPhoto()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Foto toevoegen</span>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;">
+        Foto's worden niet geüpload — alleen op jouw apparaat opgeslagen
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn btn-accent" id="photos-next-btn" onclick="goTo('preview')">Bekijk voorbeeld →</button>
+      <button class="btn btn-ghost" onclick="goTo('preview')">Overslaan, geen foto's</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: PREVIEW -->
+  <div class="screen" id="screen-preview">
+    <div class="header">
+      <div>
+        <div class="header-logo">Memories<span>4life</span></div>
+        <div class="header-sub">klaar voor Polarsteps</div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="loc-chip">
+        <div class="loc-dot"></div>
+        <span id="preview-location">Onbekend</span>
+      </div>
+
+      <div class="card-label">Jouw verhaal</div>
+      <div class="summary-box" id="summary-edit" contenteditable="true"></div>
+      <div class="char-count" id="char-count">0 tekens</div>
+
+      <div id="preview-tags" class="tags" style="margin-top:8px;"></div>
+
+      <div id="preview-photos" style="margin-top:8px;"></div>
+
+      <div class="divider"></div>
+
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">
+        <strong style="color:var(--text);font-weight:500;">Hoe plak je dit in Polarsteps?</strong><br>
+        1. Tik op "Kopieer tekst" hieronder<br>
+        2. Open Polarsteps → jouw reis → nieuwe stap<br>
+        3. Plak de tekst en voeg de geselecteerde foto's toe
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn btn-accent" onclick="copyForPolarsteps()">Kopieer tekst voor Polarsteps</button>
+      <button class="btn btn-ghost" onclick="saveToHistory()">Opslaan & nieuwe dag</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: HISTORY -->
+  <div class="screen" id="screen-history">
+    <div class="header">
+      <div>
+        <div class="header-logo">Memories<span>4life</span></div>
+        <div class="header-sub">alle dagen</div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div id="history-list">
+        <div class="empty">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          <p>Nog geen opgeslagen dagen.<br>Begin met je eerste opname!</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn btn-ghost" onclick="goTo('record')">← Terug naar opnemen</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="header">
+      <div>
+        <div class="header-logo">Memories<span>4life</span></div>
+        <div class="header-sub">instellingen</div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="card">
+        <div class="card-label">API-sleutels</div>
+        <div class="settings-row" style="flex-direction:column;align-items:flex-start;">
+          <div>
+            <div class="settings-label">OpenAI API-sleutel</div>
+            <div class="settings-sub">Voor spraak-naar-tekst (Whisper)</div>
+          </div>
+          <input class="settings-input" type="password" id="openai-key" placeholder="sk-..." autocomplete="off" spellcheck="false">
+        </div>
+        <div class="settings-row" style="flex-direction:column;align-items:flex-start;border:none;">
+          <div>
+            <div class="settings-label">Anthropic API-sleutel</div>
+            <div class="settings-sub">Voor het schrijven van het verhaal</div>
+          </div>
+          <input class="settings-input" type="password" id="anthropic-key" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Reisinstellingen</div>
+        <div class="settings-row" style="flex-direction:column;align-items:flex-start;">
+          <div>
+            <div class="settings-label">Naam van de reis</div>
+          </div>
+          <input class="settings-input" type="text" id="trip-name" placeholder="bv. Zomervakantie 2025" autocomplete="off">
+        </div>
+        <div class="settings-row" style="flex-direction:column;align-items:flex-start;border:none;">
+          <div>
+            <div class="settings-label">Schrijfstijl</div>
+            <div class="settings-sub">Hoe wil je dat het verhaal klinkt?</div>
+          </div>
+          <select class="settings-input" id="write-style">
+            <option value="gezin">Gezinsvakantie — warm & grappig</option>
+            <option value="avontuur">Avontuurlijk & enthousiast</option>
+            <option value="rustig">Rustig & beschouwend</option>
+            <option value="kind">Vanuit kinderperspectief</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Hoe installeer je deze app?</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+          1. Open deze pagina in Chrome op je Android<br>
+          2. Tik op de drie puntjes rechtsboven<br>
+          3. Kies "Toevoegen aan startscherm"<br>
+          4. De app verschijnt als icoon op je telefoon
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn btn-accent" onclick="saveSettings()">Instellingen opslaan</button>
+      <button class="btn btn-ghost" onclick="goTo('record')">← Terug</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="nav">
+    <div class="nav-item active" id="nav-record" onclick="goTo('record')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="11" r="4"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8"/></svg>
+      Opnemen
+    </div>
+    <div class="nav-item" id="nav-history" onclick="goTo('history')">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      Logboek
+    </div>
+    <div class="nav-item" id="nav-settings" onclick="goTo('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      Instellingen
+    </div>
+  </div>
+
+  <div class="copy-flash" id="copy-flash">✓ Tekst gekopieerd!</div>
+</div>
+
+<script>
+const SCREENS = ['record','processing','photos','preview','history','settings'];
+let currentScreen = 'record';
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let timerInterval = null;
+let timerSeconds = 0;
+let locationData = { lat: null, lon: null, name: 'Onbekend' };
+let currentTranscript = '';
+let currentSummary = '';
+let selectedPhotos = [];
+let photoFiles = [];
+
+// STATE
+function loadSettings() {
+  return {
+    openaiKey: localStorage.getItem('openai_key') || '',
+    anthropicKey: localStorage.getItem('anthropic_key') || '',
+    tripName: localStorage.getItem('trip_name') || 'Onze reis',
+    writeStyle: localStorage.getItem('write_style') || 'gezin'
+  };
+}
+
+function saveSettings() {
+  const s = loadSettings();
+  localStorage.setItem('openai_key', document.getElementById('openai-key').value.trim());
+  localStorage.setItem('anthropic_key', document.getElementById('anthropic-key').value.trim());
+  localStorage.setItem('trip_name', document.getElementById('trip-name').value.trim());
+  localStorage.setItem('write_style', document.getElementById('write-style').value);
+  showCopyFlash('Instellingen opgeslagen!');
+  setTimeout(() => goTo('record'), 800);
+}
+
+function checkSetup() {
+  const s = loadSettings();
+  const banner = document.getElementById('setup-warn');
+  if (!s.openaiKey || !s.anthropicKey) {
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// NAVIGATION
+function goTo(screen) {
+  const prev = document.getElementById('screen-' + currentScreen);
+  const next = document.getElementById('screen-' + screen);
+  if (!next) return;
+  prev.classList.remove('active');
+  prev.classList.add('slide-back');
+  setTimeout(() => prev.classList.remove('slide-back'), 300);
+  next.classList.add('active');
+  currentScreen = screen;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = document.getElementById('nav-' + screen);
+  if (navItem) navItem.classList.add('active');
+  if (screen === 'settings') loadSettingsUI();
+  if (screen === 'history') renderHistory();
+}
+
+function loadSettingsUI() {
+  const s = loadSettings();
+  document.getElementById('openai-key').value = s.openaiKey;
+  document.getElementById('anthropic-key').value = s.anthropicKey;
+  document.getElementById('trip-name').value = s.tripName;
+  document.getElementById('write-style').value = s.writeStyle;
+}
+
+// GEOLOCATION
+function getLocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(async pos => {
+    locationData.lat = pos.coords.latitude;
+    locationData.lon = pos.coords.longitude;
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${locationData.lat}&lon=${locationData.lon}&format=json`);
+      const d = await r.json();
+      const city = d.address.city || d.address.town || d.address.village || d.address.county || '';
+      const country = d.address.country || '';
+      locationData.name = [city, country].filter(Boolean).join(', ');
+    } catch(e) {
+      locationData.name = `${locationData.lat.toFixed(2)}°N, ${locationData.lon.toFixed(2)}°E`;
+    }
+    document.getElementById('location-display').textContent = locationData.name;
+    const d = new Date();
+    document.getElementById('trip-day-label').textContent = d.toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long'});
+  }, () => {
+    document.getElementById('location-display').textContent = 'Geen locatietoestemming';
+  });
+}
+
+// RECORDING
+async function toggleRecord() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    const options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {};
+    mediaRecorder = new MediaRecorder(stream, options);
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.start(1000);
+    isRecording = true;
+    timerSeconds = 0;
+    document.getElementById('record-btn').classList.add('recording');
+    document.getElementById('waveform').classList.add('active');
+    document.getElementById('rec-status').textContent = 'Opname bezig... tik om te stoppen';
+    document.getElementById('process-btn').style.display = 'none';
+    timerInterval = setInterval(() => {
+      timerSeconds++;
+      const m = Math.floor(timerSeconds / 60);
+      const s = timerSeconds % 60;
+      document.getElementById('rec-timer').textContent = m + ':' + String(s).padStart(2, '0');
+    }, 1000);
+  } catch(e) {
+    document.getElementById('rec-status').textContent = 'Microfoon toegang geweigerd';
+  }
+}
+
+function stopRecording() {
+  if (!mediaRecorder) return;
+  mediaRecorder.stop();
+  mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  isRecording = false;
+  clearInterval(timerInterval);
+  document.getElementById('record-btn').classList.remove('recording');
+  document.getElementById('waveform').classList.remove('active');
+  document.getElementById('rec-status').textContent = `Opname klaar (${document.getElementById('rec-timer').textContent})`;
+  document.getElementById('process-btn').style.display = 'block';
+}
+
+// PROCESSING
+async function goToProcessing() {
+  const s = loadSettings();
+  if (!s.openaiKey || !s.anthropicKey) {
+    alert('Voeg eerst je API-sleutels toe via Instellingen.');
+    goTo('settings');
+    return;
+  }
+  goTo('processing');
+  await runProcessing();
+}
+
+function setStep(n, state, sub) {
+  const dot = document.getElementById('step' + n + '-dot');
+  const subEl = document.getElementById('step' + n + '-sub');
+  dot.className = 'step-dot ' + state;
+  if (state === 'active') {
+    dot.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:1.5px;"></div>';
+  } else if (state === 'done') {
+    dot.textContent = '✓';
+  } else {
+    dot.textContent = n;
+  }
+  if (sub) subEl.textContent = sub;
+}
+
+async function runProcessing() {
+  const s = loadSettings();
+  const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+  // STEP 1: Whisper
+  setStep(1, 'active', 'bezig...');
+  try {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'audio.webm');
+    formData.append('model', 'whisper-1');
+    formData.append('language', 'nl');
+    const r = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + s.openaiKey },
+      body: formData
+    });
+    if (!r.ok) throw new Error('OpenAI fout: ' + r.status);
+    const d = await r.json();
+    currentTranscript = d.text;
+    setStep(1, 'done', 'klaar · ' + currentTranscript.split(' ').length + ' woorden');
+    document.getElementById('transcript-section').style.display = 'block';
+    document.getElementById('transcript-display').textContent = currentTranscript;
+  } catch(e) {
+    setStep(1, 'waiting', 'mislukt');
+    showError('Stap 1 mislukt: ' + e.message + '. Controleer je OpenAI sleutel.');
+    return;
+  }
+
+  // STEP 2: Claude
+  setStep(2, 'active', 'bezig...');
+  const styleMap = {
+    gezin: 'warm, persoonlijk en af en toe grappig — geschreven als een gezin op avontuur',
+    avontuur: 'enthousiast en avontuurlijk — alsof je het niet kan wachten om het te vertellen',
+    rustig: 'rustig en beschouwend — mooie observaties en sfeer',
+    kind: 'vanuit het perspectief van de kinderen — speels en verwonderd'
+  };
+  const styleDesc = styleMap[s.writeStyle] || styleMap.gezin;
+  try {
+    const prompt = `Je helpt een gezin hun reisverhaal bij te houden op Polarsteps.
+
+Schrijf een kort reisverhaal (150-200 woorden) op basis van onderstaande gesproken memo. 
+Stijl: ${styleDesc}.
+Schrijf in de wij-vorm. Geen titels of kopjes. Gewoon een mooi stuk tekst dat direct in Polarsteps kan.
+Locatie: ${locationData.name}.
+
+Memo:
+${currentTranscript}
+
+Geef ook 3-5 korte tags (losse woorden, geen hashtags) die het moment omschrijven, op de laatste regel, gescheiden door komma's, voorafgegaan door "TAGS:".`;
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': s.anthropicKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!r.ok) throw new Error('Anthropic fout: ' + r.status);
+    const d = await r.json();
+    const raw = d.content[0].text;
+    const tagMatch = raw.match(/TAGS:\s*(.+)$/m);
+    const tags = tagMatch ? tagMatch[1].split(',').map(t => t.trim()) : [];
+    currentSummary = raw.replace(/TAGS:.+$/m, '').trim();
+    window._currentTags = tags;
+    setStep(2, 'done', 'verhaal klaar');
+  } catch(e) {
+    setStep(2, 'waiting', 'mislukt');
+    showError('Stap 2 mislukt: ' + e.message + '. Controleer je Anthropic sleutel.');
+    return;
+  }
+
+  // STEP 3
+  setStep(3, 'done', 'kies foto\'s & plak in Polarsteps');
+  setTimeout(() => {
+    preparePhotoScreen();
+    goTo('photos');
+  }, 800);
+}
+
+function showError(msg) {
+  const el = document.getElementById('process-error');
+  el.style.display = 'block';
+  document.getElementById('error-msg').textContent = msg;
+}
+
+// PHOTOS
+function preparePhotoScreen() {
+  selectedPhotos = [];
+  photoFiles = [];
+  const grid = document.getElementById('photo-grid');
+  grid.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:var(--radius-sm);border:1.5px dashed var(--border2);cursor:pointer;color:var(--text3);font-size:12px;flex-direction:column;gap:4px;" onclick="importPhoto()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+    <span>Foto toevoegen</span>
+  </div>`;
+  document.getElementById('photo-count-header').textContent = '0 / 4';
+}
+
+function importPhoto() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.multiple = true;
+  input.onchange = e => {
+    const files = Array.from(e.target.files).slice(0, 4 - photoFiles.length);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        addPhotoToGrid(ev.target.result, file);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+  input.click();
+}
+
+function addPhotoToGrid(dataUrl, file) {
+  if (photoFiles.length >= 4) return;
+  photoFiles.push(file);
+  const idx = photoFiles.length - 1;
+  const cell = document.createElement('div');
+  cell.className = 'photo-cell selected';
+  cell.onclick = () => togglePhotoSelect(cell, idx);
+  cell.innerHTML = `<img src="${dataUrl}" alt="foto"><div class="photo-check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>`;
+  cell.dataset.url = dataUrl;
+  const grid = document.getElementById('photo-grid');
+  grid.appendChild(cell);
+  selectedPhotos.push(idx);
+  updatePhotoCount();
+}
+
+function togglePhotoSelect(cell, idx) {
+  cell.classList.toggle('selected');
+  if (cell.classList.contains('selected')) {
+    if (!selectedPhotos.includes(idx)) selectedPhotos.push(idx);
+  } else {
+    selectedPhotos = selectedPhotos.filter(i => i !== idx);
+  }
+  updatePhotoCount();
+}
+
+function updatePhotoCount() {
+  const cnt = document.querySelectorAll('#photo-grid .photo-cell.selected').length;
+  document.getElementById('photo-count-header').textContent = cnt + ' / 4';
+}
+
+// PREVIEW
+function goTo_preview_wrapper() {
+  preparePreview();
+  goTo('preview');
+}
+
+function preparePreview() {
+  document.getElementById('preview-location').textContent = locationData.name;
+  const editEl = document.getElementById('summary-edit');
+  editEl.textContent = currentSummary;
+  updateCharCount();
+  editEl.addEventListener('input', updateCharCount);
+
+  const tagsEl = document.getElementById('preview-tags');
+  tagsEl.innerHTML = (window._currentTags || []).map(t => `<span class="tag">${t}</span>`).join('');
+
+  const photosEl = document.getElementById('preview-photos');
+  const selectedCells = document.querySelectorAll('#photo-grid .photo-cell.selected');
+  if (selectedCells.length > 0) {
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;';
+    selectedCells.forEach(cell => {
+      const img = document.createElement('img');
+      img.src = cell.dataset.url;
+      img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;';
+      grid.appendChild(img);
+    });
+    photosEl.innerHTML = '';
+    photosEl.appendChild(grid);
+  } else {
+    photosEl.innerHTML = '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;">Geen foto\'s geselecteerd</div>';
+  }
+}
+
+function updateCharCount() {
+  const txt = document.getElementById('summary-edit').textContent;
+  document.getElementById('char-count').textContent = txt.length + ' tekens';
+}
+
+// Override goTo for preview to prep data
+const _origGoTo = goTo;
+window.goTo = function(screen) {
+  if (screen === 'preview') preparePreview();
+  _origGoTo(screen);
+};
+
+// COPY
+function copyForPolarsteps() {
+  const text = document.getElementById('summary-edit').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showCopyFlash('Tekst gekopieerd!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showCopyFlash('Tekst gekopieerd!');
+  }
+}
+
+function showCopyFlash(msg) {
+  const el = document.getElementById('copy-flash');
+  el.textContent = '✓ ' + msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// HISTORY
+function saveToHistory() {
+  const entries = JSON.parse(localStorage.getItem('entries') || '[]');
+  entries.unshift({
+    date: new Date().toISOString(),
+    location: locationData.name,
+    summary: document.getElementById('summary-edit').textContent,
+    tags: window._currentTags || []
+  });
+  localStorage.setItem('entries', JSON.stringify(entries.slice(0, 50)));
+  showCopyFlash('Dag opgeslagen!');
+  setTimeout(() => goTo('record'), 800);
+}
+
+function renderHistory() {
+  const entries = JSON.parse(localStorage.getItem('entries') || '[]');
+  const container = document.getElementById('history-list');
+  if (entries.length === 0) {
+    container.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><p>Nog geen opgeslagen dagen.<br>Begin met je eerste opname!</p></div>`;
+    return;
+  }
+  container.innerHTML = entries.map((e, i) => {
+    const d = new Date(e.date);
+    const dayNum = d.getDate();
+    const preview = e.summary.substring(0, 80) + (e.summary.length > 80 ? '...' : '');
+    return `<div class="history-item">
+      <div class="history-day">${dayNum}</div>
+      <div style="flex:1;">
+        <div class="history-title">${e.location}</div>
+        <div class="history-preview">${preview}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// INIT
+window.onload = () => {
+  checkSetup();
+  getLocation();
+  renderHistory();
+};
+</script>
+</body>
+</html>
