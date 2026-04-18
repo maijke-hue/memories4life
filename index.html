@@ -816,7 +816,7 @@ function saveSettings() {
   localStorage.setItem('openai_key', document.getElementById('openai-key').value.trim());
   localStorage.setItem('anthropic_key', document.getElementById('anthropic-key').value.trim());
   localStorage.setItem('trip_name', document.getElementById('trip-name').value.trim());
-  localStorage.setItem('write_style', document.getElementById('write-style').value);
+  
   showCopyFlash('Instellingen opgeslagen!');
   setTimeout(() => goTo('record'), 800);
 }
@@ -853,7 +853,7 @@ function loadSettingsUI() {
   document.getElementById('openai-key').value = s.openaiKey;
   document.getElementById('anthropic-key').value = s.anthropicKey;
   document.getElementById('trip-name').value = s.tripName;
-  document.getElementById('write-style').value = s.writeStyle;
+  
 }
 
 // GEOLOCATION
@@ -981,13 +981,7 @@ async function runProcessing() {
 
   // STEP 2: Claude
   setStep(2, 'active', 'bezig...');
-  const styleMap = {
-    gezin: 'warm, persoonlijk en af en toe grappig — geschreven als een gezin op avontuur',
-    avontuur: 'enthousiast en avontuurlijk — alsof je het niet kan wachten om het te vertellen',
-    rustig: 'rustig en beschouwend — mooie observaties en sfeer',
-    kind: 'vanuit het perspectief van de kinderen — speels en verwonderd'
-  };
-  const styleDesc = styleMap[s.writeStyle] || styleMap.gezin;
+  const styleDesc = 'authentiek en eerlijk — gewone spreektaal, geen bloemrijke beschrijvingen of overdreven enthousiasme, gewoon wat er gebeurde en hoe het voelde, herkenbaar en geordend maar niet opgepoetst';
   try {
     const prompt = `Je helpt een gezin hun reisverhaal bij te houden op Polarsteps.
 
@@ -1001,7 +995,7 @@ ${currentTranscript}
 
 Geef ook 3-5 korte tags (losse woorden, geen hashtags) die het moment omschrijven, op de laatste regel, gescheiden door komma's, voorafgegaan door "TAGS:".`;
 
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('https://memories4life-proxy.maijke.workers.dev/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
